@@ -64,6 +64,8 @@ try:
             elif(commands[0] == "chlocn"):
                 if(len(commands) == 2 and (commands[1] == "/" or commands[1] == "~")):
                     cwd = ""
+                elif(commands[1] == ".." or commands[1] == "../.."):
+                    print("Cannot change directory: user is at root")
                 else:
                     if(check_location(s3, s3_res, cwd, commands)):
                         if(is_relative_path(commands[1])):
@@ -95,6 +97,12 @@ try:
             elif(commands[0] == "chlocn"):
                 if(len(commands) == 2 and (commands[1] == "/" or commands[1] == "~")):
                     cwd = ""
+                elif(commands[1] == ".."):
+                    full_path_split = cwd.split('/')
+                    cwd = cwd.replace("/"+full_path_split[-1], '')
+                elif(commands[1] == "../.."):
+                    full_path_split = cwd.split('/')
+                    cwd = cwd.replace("/"+full_path_split[-2]+"/"+full_path_split[-1], '')
                 else:
                     if(check_location(s3, s3_res, cwd, commands)):
                         if(is_relative_path(commands[1])):
