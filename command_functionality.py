@@ -246,12 +246,17 @@ def directory_exists(s3, s3_res, loc):
     if(bucket_empty(s3, bucket_name)):
         return False
     
-    path = path + "/"
-    response = s3.list_objects(Bucket=bucket_name)
+    prefix = path + "/"
+    response = s3.list_objects(Bucket=bucket_name, Prefix=prefix)
+    try:
+        contents = response["Contents"]
+    except KeyError:
+        return False
     for obj in response["Contents"]:
-        if(obj["Key"] == path):
+        if(obj["Key"].split('/')[0] == path):
             return True
-    print("here")
+        if(obj["Key"] == prefix): # Directory exists, it's just empty
+            return True
     return False
 
 def check_location(s3, s3_res, cwd, cmd): # Check if directory exists
@@ -261,7 +266,6 @@ def check_location(s3, s3_res, cwd, cmd): # Check if directory exists
 
     full_path = ""
     if(is_relative_path(cmd[1])):
-        print("here - relative path")
         if(cwd == ""):
             bucket_name = cmd[1]
             full_path = "/"+bucket_name
@@ -276,7 +280,7 @@ def check_location(s3, s3_res, cwd, cmd): # Check if directory exists
 
         # Check if last item in path is a folder (not a file)
         if(is_file(path_split)):
-            print("You cannot chlocn to a file, please chlocn to a directory/folder.")
+            print("You cannot chlocn to a file, please chlocn to a directory/folder")
             return False
 
     # Check if bucket exists
@@ -285,10 +289,9 @@ def check_location(s3, s3_res, cwd, cmd): # Check if directory exists
         return False
     
     # Check if directory exists
-    print("full path = "+ full_path)
     if(not directory_exists(s3, s3_res, full_path)):
         print("Directory does not exist")
-        # return False
+        return False
     return True
 
 # [Cloud Functions]
@@ -362,6 +365,7 @@ def list_path_contents(s3, path, bucket_name):
     prefix = path.replace(bucket_name+"/", '') + "/"
     top_level_contents = []
     response = s3.list_objects(Bucket=bucket_name, Prefix=prefix)
+
     for obj in response["Contents"]:
         if(len(obj["Key"].split('/')) >= 3): # If len == 2 and obj["Key"].split('/')[1] == "", it's the prefix
             # Multi-level directories (need trimming) in top level
