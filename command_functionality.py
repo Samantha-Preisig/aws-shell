@@ -187,9 +187,9 @@ def create_folder(s3, s3_res, cwd, cmd):
         return
     
     if(is_relative_path(cmd[1])):
-        if(directory_exists(s3, s3_res, cmd[1])): # directory_exists() doesn't work with relative paths yet
-            print("Cannot create folder: the directory already exists")
-            return
+        # if(directory_exists(s3, s3_res, cmd[1])): # directory_exists() doesn't work with relative paths yet
+        #     print("Cannot create folder: the directory already exists")
+        #     return
 
         bucket_name = cwd.split('/')[1]
         folder = cmd[1] + "/"
@@ -366,12 +366,18 @@ def list_path_contents(s3, path, bucket_name):
     top_level_contents = []
     response = s3.list_objects(Bucket=bucket_name, Prefix=prefix)
 
+    try:
+        contents = response["Contents"]
+    except KeyError:
+        return False
+
     for obj in response["Contents"]:
         if(len(obj["Key"].split('/')) >= 3): # If len == 2 and obj["Key"].split('/')[1] == "", it's the prefix
             # Multi-level directories (need trimming) in top level
             folder = obj["Key"].split('/')[1] + "/"
-            if(content_dne(folder, top_level_contents)):
-                top_level_contents.append(folder)
+            if(folder != (prefix.split('/')[-2]+"/")): # Don't list the folder you want to list contents of
+                if(content_dne(folder, top_level_contents)):
+                    top_level_contents.append(folder)
         else:
             # Files in top level
             file_obj = obj["Key"].split('/')[-1]
@@ -413,7 +419,11 @@ def list_bdo(s3, s3_res, cwd, cmd):
         if(cmd[1] == "/" or cmd[1] == "~"):
             list_buckets(s3)
         else:
-            path = ''.join(cmd[1].split('/', 1))
+
+            if(is_relative_path(cmd[1])):
+                path = ''.join(cwd.split('/', 1))
+            else:
+                path = ''.join(cmd[1].split('/', 1))
             path_split = path.split('/')
             bucket_name = path_split[0]
             
@@ -435,7 +445,7 @@ def list_bdo(s3, s3_res, cwd, cmd):
 # 4g) Delete object
 # Assumptions: if no / before second argument, the person is referrencing object from cwd
 # Limitations:
-# TODO: delete folders
+# TODO: delete files
 
 def folder_obj_count(s3_res, bucket_name, path):
     count = 0
@@ -470,7 +480,8 @@ def delete_obj(s3, s3_res, cwd, cmd):
                 return
             
             filename = path_split[-1]
-            response = s3.delete_object(Bucket=bucket_name, Key=filename)
+            # response = s3.delete_object(Bucket=bucket_name, Key=filename)
+            response = s3_res.Object(bucket_name, filename).delete()
         else: # Path is a folder
             if(not is_relative_path(cmd[1])): # directory_exists() not currently implemented to handle relative paths
                 if(not directory_exists(s3, s3_res, cmd[1])):
@@ -482,6 +493,7 @@ def delete_obj(s3, s3_res, cwd, cmd):
                 return
             
             folder = path.replace(bucket_name+"/", '') + "/"
+            print(folder)
             response = s3.delete_object(Bucket=bucket_name, Key=folder)
 
 # [Cloud Functions]
