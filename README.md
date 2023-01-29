@@ -1,7 +1,7 @@
 # aws-shell
 
 ## Running the shell
-- Make sure to have your aws_access_key_id and aws_secret_access_key set up in an S5-S3.conf file. The file should be set up as the following:
+- Make sure to have your aws_access_key_id and aws_secret_access_key set up in an `S5-S3.conf` file. The file should be set up as the following:
 ```
 [default]
 region = ca-central-1
