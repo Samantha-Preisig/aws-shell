@@ -29,6 +29,7 @@ def is_relative_path(path):
 def non_cloud_cmd(cmd):
     returned_value = os.system(cmd)  # returns the exit code in unix
     print(returned_value)
+    return returned_value
 
 # [Local File Functions]
 # 3b) Copy local file to cloud location
@@ -48,7 +49,7 @@ def same_file_ext(local, cloud):
 def copy_local_to_cloud(s3, s3_res, cwd, cmd):
     if(missing_arg(cmd, 3)):
         print("Usage: locs3cp <full/relative pathname of local file> /<bucket name>/<full pathname of S3 object>")
-        return
+        return 0
     
     cloud_path = ""
     if(is_relative_path(cmd[2])):
@@ -59,7 +60,7 @@ def copy_local_to_cloud(s3, s3_res, cwd, cmd):
     bucket_name = cloud_path.split("/")[1]
     if(not bucket_exists(s3_res, bucket_name)):
         print("Unsuccessful copy: bucket does not exist")
-        return
+        return 0
 
     local_path = cmd[1]
     local_path = local_path.split("/")[-1]
@@ -67,8 +68,10 @@ def copy_local_to_cloud(s3, s3_res, cwd, cmd):
 
     if(len(local_path.split('.')) == 2 and len(cloud_path.split('.')) == 2 and same_file_ext(local_path, cloud_path)):
         s3.upload_file(local_path, bucket_name, cloud_path)
+        return 1
     else:
         print("Unsuccessful copy")
+        return 0
 
 # [Local File Functions]
 # 3c) Copy cloud object to local
@@ -83,7 +86,7 @@ def copy_local_to_cloud(s3, s3_res, cwd, cmd):
 def copy_cloud_to_local(s3, s3_res, cwd, cmd):
     if(missing_arg(cmd, 3)):
         print("Usage: s3loccp /<bucket name>/<full pathname of S3 file> /<full/relative pathname of local file>")
-        return
+        return 0
     
     cloud_path = ""
     if(is_relative_path(cmd[1])):
@@ -94,15 +97,17 @@ def copy_cloud_to_local(s3, s3_res, cwd, cmd):
     bucket_name = cloud_path.split('/')[1]
     if(not bucket_exists(s3_res, bucket_name)):
         print("Unsuccessful copy: bucket does not exist")
-        return
+        return 0
 
     local_path = cmd[2]
     local_path = local_path.split('/')[-1]
     cloud_path = cloud_path.replace("/"+bucket_name+"/", '')
     if(len(local_path.split('.')) == 2 and len(cloud_path.split('.')) == 2 and same_file_ext(local_path, cloud_path)):
         s3.download_file(bucket_name, cloud_path, local_path)
+        return 1
     else:
         print("Unsuccessful copy")
+        return 0
 
 # [Cloud Functions]
 # 4a) Create bucket
@@ -158,10 +163,10 @@ def check_name(name):
 def create_bucket(s3, s3_res, cmd):
     if(missing_arg(cmd, 2)):
         print("Usage: create_bucket /<bucket name>")
-        return
+        return 0
     if(is_relative_path(cmd[1])):
         print("Usage: create_bucket /<bucket name>")
-        return
+        return 0
     # if(len(cmd[1].split('/')) != 2):
     #     print("Usage: create_bucket /<bucket name>")
     #     return
@@ -170,10 +175,12 @@ def create_bucket(s3, s3_res, cmd):
 
     if(bucket_exists(s3_res, bucket_name)):
         print("Cannot create an existing bucket")
-        return
+        return 0
     
     if(check_name(bucket_name)):
         s3.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': 'ca-central-1'})
+        return 1
+    return 0
 
 # [Cloud Functions]
 # 4b) Create directory/folder
@@ -185,7 +192,7 @@ def create_bucket(s3, s3_res, cmd):
 def create_folder(s3, s3_res, cwd, cmd):
     if(missing_arg(cmd, 2)):
         print("Usage: create_folder /<full/relative pathname of new folder>")
-        return
+        return 0
     
     if(is_relative_path(cmd[1])):
         # if(directory_exists(s3, s3_res, cmd[1])): # directory_exists() doesn't work with relative paths yet
@@ -195,6 +202,7 @@ def create_folder(s3, s3_res, cwd, cmd):
         bucket_name = cwd.split('/')[1]
         folder = cmd[1] + "/"
         s3.put_object(Bucket=bucket_name, Key=folder)
+        return 1
     else:
     
         path = ''.join(cmd[1].split('/', 1))
@@ -202,21 +210,22 @@ def create_folder(s3, s3_res, cwd, cmd):
         
         if(len(path_split) == 1): # Only bucket was listed
             print("Cannot create folder: a bucket was given")
-            return
+            return 0
 
         # Creating a folder in a bucket that doesn't exist
         bucket_name = path_split[0]
         if(not bucket_exists(s3_res, bucket_name)):
             print("Cannot create folder: the bucket doesn't exist")
-            return
+            return 0
         
         if(directory_exists(s3, s3_res, cmd[1])):
             print("Cannot create folder: the directory already exists")
-            return
+            return 0
         
         folder_name = path.replace(bucket_name+"/", '') + "/"
         print(folder_name)
         s3.put_object(Bucket=bucket_name, Key=folder_name)
+        return 1
 
 # [Cloud Functions]
 # 4c) Change directory
@@ -303,6 +312,7 @@ def check_location(s3, s3_res, cwd, cmd): # Check if directory exists
 
 def get_cwd(cwd):
     print(cwd)
+    return 1 # For A1
 
     # The following builds the success string --> <bucket name>: <full pathname of directory>
     # path_split = cwd.split('/')
@@ -402,24 +412,30 @@ def list_bdo(s3, s3_res, cwd, cmd):
         # Listing existing buckets in a new session
         if(cwd == ""):
             list_buckets(s3)
+            print("") # Formatting
+            return 1
         # The cwd in a bucket
         elif(current_directory == bucket_name):
             if(list_bucket_contents(s3, s3_res, bucket_name)):
                 print("") # Formatting
-                return
+                return 1
+            else:
+                return 1 # Bucket is empty (but exists)
         else:
             # List given path
             if(list_path_contents(s3, path, bucket_name)):
                 print("") # Formatting
-                return
-        print("") # Formatting
-        return
+                return 1
+            else:
+                return 1 # Path is empty (but exists)
     
     # List with a given path (full path)
     else:
         # List at root (list buckets)
         if(cmd[1] == "/" or cmd[1] == "~"):
             list_buckets(s3)
+            print("") # Formatting
+            return 1
         else:
 
             if(is_relative_path(cmd[1])):
@@ -433,15 +449,18 @@ def list_bdo(s3, s3_res, cwd, cmd):
             if(path == bucket_name):
                 if(list_bucket_contents(s3, s3_res, bucket_name)):
                     print("") # Formatting
-                    return
+                    return 1
+                else:
+                    return 1 # Bucket is empty (but exists)
             else:
                 # List given path
                 if(list_path_contents(s3, path, bucket_name)):
                     print("") # Formatting
-                    return
-        print("") # Formatting
-        return
+                    return 1
+                else:
+                    return 1 # Path is empty (but exists)
     print("Cannot list contents of this S3 location.")
+    return 0
 
 # [Cloud Functions]
 # 4f) Copy objects
@@ -453,7 +472,7 @@ def list_bdo(s3, s3_res, cwd, cmd):
 def copy_cloud_obj(s3, s3_res, cwd, cmd):
     if(missing_arg(cmd, 3)):
         print("Usage: s3copy /<from S3 location of object> <to S3 location>")
-        return
+        return 0
 
     # From location (full path given)
     from_path = ''.join(cmd[1].split('/', 1))
@@ -469,17 +488,18 @@ def copy_cloud_obj(s3, s3_res, cwd, cmd):
 
     if not (bucket_exists(s3_res, from_bucket_name) and bucket_exists(s3_res, to_bucket_name)):
         print("Cannot perform copy")
-        return
+        return 0
 
     if not (len(from_full_path.split('.')) == 2 and len(to_full_path.split('.')) == 2 and same_file_ext(from_full_path, to_full_path)):
         print("Cannot perform copy")
-        return
+        return 0
 
     copy_source = {
         'Bucket': from_bucket_name,
         'Key': from_full_path
     }
     s3_res.meta.client.copy(copy_source, to_bucket_name, to_full_path)
+    return 1
 
 # [Cloud Functions]
 # 4g) Delete object
@@ -498,14 +518,14 @@ def folder_obj_count(s3_res, bucket_name, path):
 def delete_obj(s3, s3_res, cwd, cmd):
     if(missing_arg(cmd, 2)):
         print("Usage: s3delete /<full/relative pathname of object>")
-        return
+        return 0
     
     path_split = cmd[1].split('/') # ==> ['', <path split up>]
     bucket_name = cwd.split('/')[1]
 
     if(len(path_split) == 2 and path_split[1] == bucket_name):
         print("Cannot perform delete on a bucket (please use 'delete_bucket' to delete buckets).")
-        return
+        return 0
     else:
         path = ""
         if(is_relative_path(cmd[1])): # Relative path given
@@ -518,23 +538,25 @@ def delete_obj(s3, s3_res, cwd, cmd):
         if(is_file(path_split)): # Path leads to a file
             if(not bucket_exists(s3_res, bucket_name)):
                 print("Cannot perform delete: bucket does not exist")
-                return
+                return 0
             
             filename = path_split[-1]
             # response = s3.delete_object(Bucket=bucket_name, Key=filename)
             response = s3_res.Object(bucket_name, filename).delete()
+            return 1
         else: # Path is a folder
             if(not is_relative_path(cmd[1])): # directory_exists() not currently implemented to handle relative paths
                 if(not directory_exists(s3, s3_res, cmd[1])):
                     print("Cannot perform delete: directory does not exist")
-                    return
+                    return 0
 
             if(folder_obj_count(s3_res, bucket_name, path) > 0):
                 print("Cannot perform delete: directory/folder is not empty")
-                return
+                return 0
             
             folder = path.replace(bucket_name+"/", '') + "/"
             response = s3.delete_object(Bucket=bucket_name, Key=folder)
+            return 1
 
 # [Cloud Functions]
 # 4h) Delete bucket
@@ -554,7 +576,7 @@ def bucket_empty(s3, bucket_name):
 def delete_bucket(s3, s3_res, cwd, cmd):
     if(missing_arg(cmd, 2)):
         print("Usage: delete_bucket /<bucket_name>")
-        return
+        return 0
     
     delete_bucket = cmd[1].replace('/', '')
     # Cannot delete a bucket if you're currently in the bucket
@@ -562,7 +584,7 @@ def delete_bucket(s3, s3_res, cwd, cmd):
         cwd_bucket_name = (cwd.split('/')[1]).replace('/', '')
         if(cwd_bucket_name == delete_bucket):
             print("Cannot delete the bucket you are currently in")
-            return
+            return 0
     
     # # Cannot delete bucket that does not exist -> TODO
     # if(not bucket_exists(s3, delete_bucket)):
@@ -572,6 +594,7 @@ def delete_bucket(s3, s3_res, cwd, cmd):
     # Cannot delete bucket if it's not empty
     if(not bucket_empty(s3, delete_bucket)):
         print("Cannot delete a non-empty bucket")
-        return
+        return 0
     
     s3.delete_bucket(Bucket=delete_bucket)
+    return 1
