@@ -8,6 +8,9 @@ region = ca-central-1
 aws_access_key_id = <your aws_access_key_id>
 aws_secret_access_key = <your aws_secret_access_key>
 ```
+- Ensure you have the requirements for running the shell by using the following command: `pip install -r Requirements.txt`
+- To run the shell: `python3 aws_shell.py`
+- To exit the shell, enter either `quit` or `exit` while the shell is running
 
 ## Assumptions:
 - Full paths must start with `/`

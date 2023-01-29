@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 
 import configparser
-import os 
-import sys 
+import os
+import sys
 import pathlib
 import boto3
 import readline
 
 from botocore.exceptions import ClientError
-from command_functionality import *
-
-# TODO:
-    # - When you pass commands[1], make sure there is actually a second command given OR just pass commands and create helper function to detect if only 1 things was passed
+from helpers import *
 
 # AWS access key id and secret access key information found in configuration file (S5-S3.conf)
 config = configparser.ConfigParser()
