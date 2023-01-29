@@ -178,7 +178,8 @@ def create_bucket(s3, s3_res, cmd):
 # [Cloud Functions]
 # 4b) Create directory/folder
 # Assumptions:
-# Limitations: If relative path is given, it is assumed the full path of new directory doesn't exist
+# Limitations:
+#   - If relative path is given, it is assumed the full path of new directory doesn't exist
 # TODO:
 
 def create_folder(s3, s3_res, cwd, cmd):
@@ -312,9 +313,10 @@ def get_cwd(cwd):
 
 # [Cloud Functions]
 # 4e) List buckets, directories, objects
-# Assumptions: If list is given an argument, it is the full pathname
+# Assumptions:
+#   - If list is given an argument, it is the full pathname
 # Limitations:
-# TODO: When listing a directory, it lists everything (even further down the tree)
+# TODO:
 
 def count_buckets(s3):
     count = 0
@@ -410,7 +412,7 @@ def list_bdo(s3, s3_res, cwd, cmd):
             if(list_path_contents(s3, path, bucket_name)):
                 print("") # Formatting
                 return
-        print("") # Formatting
+        # print("") # Formatting
         return
     
     # List with a given path (full path)
@@ -437,13 +439,52 @@ def list_bdo(s3, s3_res, cwd, cmd):
                 if(list_path_contents(s3, path, bucket_name)):
                     print("") # Formatting
                     return
-        print("") # Formatting
+        # print("") # Formatting
         return
     print("Cannot list contents of this S3 location.")
 
 # [Cloud Functions]
+# 4f) Copy objects
+# Assumptions:
+# Limitations:
+#   - Only works with full paths
+# TODO: Relative path implementation
+
+def copy_cloud_obj(s3, s3_res, cwd, cmd):
+    if(missing_arg(cmd, 3)):
+        print("Usage: s3copy /<from S3 location of object> <to S3 location>")
+        return
+
+    # From location (full path given)
+    from_path = ''.join(cmd[1].split('/', 1))
+    path_split = from_path.split('/')
+    from_bucket_name = path_split[0]
+    from_full_path = cmd[1].replace("/"+from_bucket_name+"/", '')
+
+    # To location (full path given)
+    to_path = ''.join(cmd[2].split('/', 1))
+    path_split = to_path.split('/')
+    to_bucket_name = path_split[0]
+    to_full_path = cmd[2].replace("/"+to_bucket_name+"/", '')
+
+    if not (bucket_exists(s3_res, from_bucket_name) and bucket_exists(s3_res, to_bucket_name)):
+        print("Cannot perform copy")
+        return
+
+    if not (len(from_full_path.split('.')) == 2 and len(to_full_path.split('.')) == 2 and same_file_ext(from_full_path, to_full_path)):
+        print("Cannot perform copy")
+        return
+
+    copy_source = {
+        'Bucket': from_bucket_name,
+        'Key': from_full_path
+    }
+    s3_res.meta.client.copy(copy_source, to_bucket_name, to_full_path)
+
+# [Cloud Functions]
 # 4g) Delete object
-# Assumptions: if no / before second argument, the person is referrencing object from cwd
+# Assumptions:
+#   - If no / before second argument, the person is referrencing object from cwd
 # Limitations:
 # TODO: delete files
 
@@ -493,7 +534,6 @@ def delete_obj(s3, s3_res, cwd, cmd):
                 return
             
             folder = path.replace(bucket_name+"/", '') + "/"
-            print(folder)
             response = s3.delete_object(Bucket=bucket_name, Key=folder)
 
 # [Cloud Functions]

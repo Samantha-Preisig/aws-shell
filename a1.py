@@ -33,24 +33,6 @@ try:
 
     print ( "Welcome to the S3 Storage Shell (S5)" )
     cwd = ""
-    
-    # TODO: Test the following loop:
-    # Prompt loop - if no buckets exist in S3 space
-    # response = s3.list_buckets()
-    # if not (response['Buckets']):
-    #     current_command = input("S5> ")
-    #     # response = s3.list_buckets()
-    #     while(not response['Buckets'] and (current_command != 'quit' and current_command != 'exit')):
-    #         print("here")
-    #         commands = current_command.split()
-            
-    #         if(commands[0] != "create_bucket"):
-    #             print("S3 storage space is empty. Please create a bucket using the command 'create_bucket /<bucket_name>'")
-    #         else:
-    #             if(check_name(bucket_name)):
-    #                 create_bucket(s3, bucket_name)
-    #         response = s3.list_buckets()
-    #         current_command = input("S5> ")
 
     # Prompt loop
     current_command = input("S5> ")
@@ -62,18 +44,19 @@ try:
             if(commands[0] == "cwlocn"):
                 print("/")
             elif(commands[0] == "chlocn"):
-                if(len(commands) == 2 and (commands[1] == "/" or commands[1] == "~")):
-                    cwd = ""
-                elif(commands[1] == ".." or commands[1] == "../.."):
-                    print("Cannot change directory: user is at root")
-                else:
-                    if(check_location(s3, s3_res, cwd, commands)):
-                        if(is_relative_path(commands[1])):
-                            cwd = build_cwd(cwd, commands)
-                        else:
-                            cwd = commands[1]
+                if(len(commands) == 2):
+                    if(commands[1] == "/" or commands[1] == "~"):
+                        cwd = ""
+                    elif(commands[1] == ".." or commands[1] == "../.."):
+                        print("Cannot change directory: user is at root")
+                    else:
+                        if(check_location(s3, s3_res, cwd, commands)):
+                            if(is_relative_path(commands[1])):
+                                cwd = build_cwd(cwd, commands)
+                            else:
+                                cwd = commands[1]
             elif(commands[0] == "list"):
-                if(count_buckets(s3) == 0): # TODO: test this
+                if(count_buckets(s3) == 0):
                     print("No buckets exits in your S3 space. Please create a bucket using 'create_bucket'")
                 else:
                     list_bdo(s3, s3_res, cwd, commands)
@@ -95,24 +78,27 @@ try:
             elif(commands[0] == "create_folder"):
                 create_folder(s3, s3_res, cwd, commands)
             elif(commands[0] == "chlocn"):
-                if(len(commands) == 2 and (commands[1] == "/" or commands[1] == "~")):
-                    cwd = ""
-                elif(commands[1] == ".."):
-                    full_path_split = cwd.split('/')
-                    cwd = cwd.replace("/"+full_path_split[-1], '')
-                elif(commands[1] == "../.."):
-                    full_path_split = cwd.split('/')
-                    cwd = cwd.replace("/"+full_path_split[-2]+"/"+full_path_split[-1], '')
-                else:
-                    if(check_location(s3, s3_res, cwd, commands)):
-                        if(is_relative_path(commands[1])):
-                            cwd = build_cwd(cwd, commands)
-                        else:
-                            cwd = commands[1]
+                if(len(commands) == 2):
+                    if(commands[1] == "/" or commands[1] == "~"):
+                        cwd = ""
+                    elif(commands[1] == ".."):
+                        full_path_split = cwd.split('/')
+                        cwd = cwd.replace("/"+full_path_split[-1], '')
+                    elif(commands[1] == "../.."):
+                        full_path_split = cwd.split('/')
+                        cwd = cwd.replace("/"+full_path_split[-2]+"/"+full_path_split[-1], '')
+                    else:
+                        if(check_location(s3, s3_res, cwd, commands)):
+                            if(is_relative_path(commands[1])):
+                                cwd = build_cwd(cwd, commands)
+                            else:
+                                cwd = commands[1]
             elif(commands[0] == "cwlocn"):
                 get_cwd(cwd)
             elif(commands[0] == "list"): # TODO: -l flag
                 list_bdo(s3, s3_res, cwd, commands)
+            elif(commands[0] == "s3copy"):
+                copy_cloud_obj(s3, s3_res, cwd, commands)
             elif(commands[0] == "s3delete"):
                 delete_obj(s3, s3_res, cwd, commands)
             elif(commands[0] == "delete_bucket"):
