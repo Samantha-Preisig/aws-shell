@@ -412,7 +412,7 @@ def list_bdo(s3, s3_res, cwd, cmd):
             if(list_path_contents(s3, path, bucket_name)):
                 print("") # Formatting
                 return
-        # print("") # Formatting
+        print("") # Formatting
         return
     
     # List with a given path (full path)
@@ -439,7 +439,7 @@ def list_bdo(s3, s3_res, cwd, cmd):
                 if(list_path_contents(s3, path, bucket_name)):
                     print("") # Formatting
                     return
-        # print("") # Formatting
+        print("") # Formatting
         return
     print("Cannot list contents of this S3 location.")
 
