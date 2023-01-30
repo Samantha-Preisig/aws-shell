@@ -1,5 +1,10 @@
 # aws-shell
 
+## TODO:
+- Documentation for each function in helpers.py
+- Refactor helper functions (+ organize command functions and helper functions into separate files?)
+- Tackle limitation list
+
 ## Running the shell
 - Make sure to have your aws_access_key_id and aws_secret_access_key set up in an `S5-S3.conf` file. The file should be set up as the following:
 ```
